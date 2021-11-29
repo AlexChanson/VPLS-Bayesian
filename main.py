@@ -6,6 +6,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern
 
 from docplex.mp.model import *
+from docplex.mp.solution import SolveSolution
 from structures import TapInstance
 
 
@@ -45,6 +46,25 @@ def make_problem(prob, instance, ed, et):
             prob.add_constraint(((n - 1) * (1 - x[i, j])) - u[i - 1] + u[j - 1] >= 1, ctname="mtz_" + str(i) + "," + str(j))
 
 
+def load_warm_raw(file):
+    with open(file) as f:
+        S = f.readline().strip().split(" ")
+        S = list(map(int, S))
+        return S
+
+
+def load_warm(prob, file) -> SolveSolution:
+    # Load base solution
+    warm = load_warm_raw(file)
+    start = SolveSolution(prob)
+    for s in warm:
+        start.add_var_value("s_" + str(s + 1), 1)
+    for i in range(len(warm) - 1):
+        this = warm[i] + 1
+        next_ = warm[i + 1] + 1
+        start.add_var_value("x_" + str(this) + "_" + str(next_), 1)
+    check = start.check_as_mip_start()
+    return start
 
 
 if __name__ == '__main__':
@@ -59,6 +79,9 @@ if __name__ == '__main__':
     make_problem(tap, ist, dist_bound, budget)
 
     tap.print_information()
-    solution = tap.solve()
 
-    tap.print_solution()
+    #solution = tap.solve()
+    #tap.print_solution()
+
+    mip_start = load_warm(tap, "/home/alex/instances/tap_1_20.warm")
+    print(mip_start.check_as_mip_start())

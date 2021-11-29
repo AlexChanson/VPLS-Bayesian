@@ -44,6 +44,7 @@ def make_problem(prob, instance, ed, et):
     for i in range(1, n+1):
         for j in range(1, n+1):
             prob.add_constraint(((n - 1) * (1 - x[i, j])) - u[i - 1] + u[j - 1] >= 1, ctname="mtz_" + str(i) + "," + str(j))
+    return x, s
 
 
 def load_warm_raw(file):
@@ -67,21 +68,39 @@ def load_warm(prob, file) -> SolveSolution:
     return start
 
 
+def vpls_xor(i, j):
+    if i == 1:
+        return 1 - j
+    return j
+
+
 if __name__ == '__main__':
     ist = TapInstance("/home/alex/instances/tap_1_20.dat")
+    max_iter = 10
+    h = 10
+    budget = round(0.25 * ist.size * 27.5)
+    dist_bound = round(0.35 * ist.size * 4.5)
     print(ist)
 
     tap = Model(name="TAP")
+    x, s = make_problem(tap, ist, dist_bound, budget)
 
-    budget = round(0.25 * ist.size * 27.5)
-    dist_bound = round(0.35 * ist.size * 4.5)
-
-    make_problem(tap, ist, dist_bound, budget)
-
-    tap.print_information()
-
+    #tap.print_information()
     #solution = tap.solve()
     #tap.print_solution()
 
-    mip_start = load_warm(tap, "/home/alex/instances/tap_1_20.warm")
-    print(mip_start.check_as_mip_start())
+    previous_solution = load_warm(tap, "/home/alex/instances/tap_1_20.warm")
+
+    current_constraint = None
+    for n_iter in range(max_iter):
+        tap.add_mip_start(previous_solution.as_mip_start())
+        print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
+        print(previous_solution.get_objective_value())
+        if current_constraint:
+            tap.remove_constraint(current_constraint)
+        s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
+
+        tap.add_constraint(sum([vpls_xor(s_vals[i], s[i]) for i in range(ist.size)]) <= h, ctname="vpls")
+        current_constraint = tap.get_constraint_by_name("vpls")
+
+        previous_solution = tap.solve()

@@ -90,13 +90,14 @@ if __name__ == '__main__':
     #tap.print_solution()
 
     previous_solution = load_warm(tap, "/home/alex/instances/tap_1_20.warm")
+    previous_solution.check_as_mip_start(strong_check=True)
 
     current_constraint = None
     for n_iter in range(max_iter):
         tap.add_mip_start(previous_solution.as_mip_start())
         print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
         print(previous_solution.get_objective_value())
-        if current_constraint:
+        if current_constraint is not None:
             tap.remove_constraint(current_constraint)
         s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
 

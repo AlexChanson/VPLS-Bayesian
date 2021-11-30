@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import time
 
 from scipy.stats import norm
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -75,9 +76,9 @@ def vpls_xor(i, j):
 
 
 if __name__ == '__main__':
-    ist = TapInstance("/home/alex/instances/tap_1_20.dat")
+    ist = TapInstance("/home/alex/instances/tap_5_200.dat")
     max_iter = 10
-    h = 10
+    h = 20
     budget = round(0.25 * ist.size * 27.5)
     dist_bound = round(0.35 * ist.size * 4.5)
     print(ist)
@@ -89,13 +90,13 @@ if __name__ == '__main__':
     #solution = tap.solve()
     #tap.print_solution()
 
-    previous_solution = load_warm(tap, "/home/alex/instances/tap_1_20.warm")
+    previous_solution = load_warm(tap, "/home/alex/instances/tap_5_200.warm")
     previous_solution.check_as_mip_start(strong_check=True)
-
+    start = time.time()
     current_constraint = None
     for n_iter in range(max_iter):
         tap.add_mip_start(previous_solution.as_mip_start())
-        print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
+        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
         print(previous_solution.get_objective_value())
         if current_constraint is not None:
             tap.remove_constraint(current_constraint)
@@ -105,3 +106,7 @@ if __name__ == '__main__':
         current_constraint = tap.get_constraint_by_name("vpls")
 
         previous_solution = tap.solve()
+        print(tap.get_solve_status())
+
+    end = time.time()
+    print("Time (s):", end - start)

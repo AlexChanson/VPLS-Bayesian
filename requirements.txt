@@ -1,2 +1,5 @@
 docplex
 cplex
+numpy
+scipy
+sklearn

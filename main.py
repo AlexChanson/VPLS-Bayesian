@@ -76,7 +76,7 @@ def vpls_xor(i, j):
 
 
 if __name__ == '__main__':
-    ist = TapInstance("/home/alex/instances/tap_5_200.dat")
+    ist = TapInstance("./instances/tap_5_200.dat")
     max_iter = 10
     h = 20
     budget = round(0.25 * ist.size * 27.5)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     #solution = tap.solve()
     #tap.print_solution()
 
-    previous_solution = load_warm(tap, "/home/alex/instances/tap_5_200.warm")
+    previous_solution = load_warm(tap, "./instances/tap_5_200.warm")
     previous_solution.check_as_mip_start(strong_check=True)
     start = time.time()
     current_constraint = None

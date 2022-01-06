@@ -75,15 +75,68 @@ def vpls_xor(i, j):
     return j
 
 
-if __name__ == '__main__':
-    ist = TapInstance("./instances/tap_5_200.dat")
-    max_iter = 10
-    h = 20
-    budget = round(0.25 * ist.size * 27.5)
-    dist_bound = round(0.35 * ist.size * 4.5)
+def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+    #sId=5, size=200
+    ist_str="./instances/tap_"+str(serialId)+"_"+str(size)+".dat"
+    ist = TapInstance(ist_str)
+    #max_iter = 10
+    #h = 20
+    #.solv -> rajouter t_it max (voir doc)
+    #return solution, t_exec...
+    budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
+    dist_bound = round(epsTcoef * ist.size * 4.5)#0,35 -> param e_d
     print(ist)
 
     tap = Model(name="TAP")
+    tap.set_time_limit(itTime)
+    x, s = make_problem(tap, ist, dist_bound, budget)
+
+    #tap.print_information()
+    #solution = tap.solve()
+    #tap.print_solution()
+
+    previous_solution = load_warm(tap, ist_str)
+    previous_solution.check_as_mip_start(strong_check=True)
+    start = time.time()
+    current_constraint = None
+    for n_iter in range(max_iter):
+        tap.add_mip_start(previous_solution.as_mip_start())
+        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
+        print(previous_solution.get_objective_value())
+        if current_constraint is not None:
+            tap.remove_constraint(current_constraint)
+        s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
+
+        tap.add_constraint(sum([vpls_xor(s_vals[i], s[i]) for i in range(ist.size)]) <= h, ctname="vpls")
+        current_constraint = tap.get_constraint_by_name("vpls")
+
+        previous_solution = tap.solve()
+        print(tap.get_solve_status())
+    end = time.time()
+    print("Time (s):", end - start)
+    return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
+    pass
+
+def error_checker(z, sol):
+    error_z, error_sol=0
+    
+    return (error_z,error_sol)
+
+
+
+if __name__ == '__main__':
+    '''
+    ist = TapInstance("./instances/tap_5_200.dat")
+    max_iter = 10
+    h = 20
+    #.solv -> rajouter t_it max (voir doc)
+    #return solution, t_exec...
+    budget = round(0.25 * ist.size * 27.5)#0,25 -> param e_t
+    dist_bound = round(0.35 * ist.size * 4.5)#0,35 -> param e_d
+    print(ist)
+
+    tap = Model(name="TAP")
+    tap.set_time_limit(3)
     x, s = make_problem(tap, ist, dist_bound, budget)
 
     #tap.print_information()
@@ -110,3 +163,6 @@ if __name__ == '__main__':
 
     end = time.time()
     print("Time (s):", end - start)
+    '''
+    solv=call_cplex(5,200,10)
+    print(solv[0]+":::"+solv[1]+":::"+solv[2])

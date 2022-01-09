@@ -10,6 +10,8 @@ from docplex.mp.model import *
 from docplex.mp.solution import SolveSolution
 from structures import TapInstance
 
+#lib Hugo
+from csv import reader
 
 def make_problem(prob, instance, ed, et):
     n = instance.size
@@ -117,12 +119,36 @@ def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDc
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
     pass
 
-def error_checker(z, sol):
+def find_tap_inst_details(id, size):
+    # open file in read mode
+    with open('./tap_instances_optimal.csv', 'r') as read_obj:
+        csv_reader = reader(read_obj)
+        for row in csv_reader:
+            if row[0]==id and row[1]==size:
+                return (row[2],row[3],row[4],row[5],row[6])
+        pass
+    return (-1,-1,-1,-1,"")
+
+def error_checker(id, size, z, sol):
     error_z, error_sol=0
-    
+    det = find_tap_inst_details(id,size)
+    t_z = det[5]
+    t_s = det[6]
+    error_z = abs(z-t_z)
+    c_sol = []
+    ts_first, sfirst = True
+    i=0
+    for c in sol:
+        if c == ',':
+            sfirst=True
+        elif not c=="\"":
+            if sfirst:
+                sfirst=False
+                c_sol.append(int(c))
+            else:
+                pass
+                
     return (error_z,error_sol)
-
-
 
 if __name__ == '__main__':
     '''

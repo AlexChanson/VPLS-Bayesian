@@ -1,4 +1,4 @@
-series_id,size,epsilon_time,epsilon_distance,time_solve,z,solution
+    series_id,size,epsilon_time,epsilon_distance,time_solve,z,solution
 0,20,0.25,0.35,0.065863,3.80275,"13,18,3,1,19"
 1,20,0.25,0.35,0.044686,4.36955,"5,12,1,15,8,11"
 2,20,0.25,0.35,0.033144,4.86992,"12,8,11,17,6,2,16"

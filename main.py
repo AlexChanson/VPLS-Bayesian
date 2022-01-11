@@ -76,82 +76,8 @@ def vpls_xor(i, j):
         return 1 - j
     return j
 
-
-def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
-    #sId=5, size=200
-    ist_str="./instances/tap_"+str(serialId)+"_"+str(size)+".dat"
-    ist = TapInstance(ist_str)
-    #max_iter = 10
-    #h = 20
-    #.solv -> rajouter t_it max (voir doc)
-    #return solution, t_exec...
-    budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
-    dist_bound = round(epsTcoef * ist.size * 4.5)#0,35 -> param e_d
-    print(ist)
-
-    tap = Model(name="TAP")
-    tap.set_time_limit(itTime)
-    x, s = make_problem(tap, ist, dist_bound, budget)
-
-    #tap.print_information()
-    #solution = tap.solve()
-    #tap.print_solution()
-
-    previous_solution = load_warm(tap, ist_str)
-    previous_solution.check_as_mip_start(strong_check=True)
-    start = time.time()
-    current_constraint = None
-    for n_iter in range(max_iter):
-        tap.add_mip_start(previous_solution.as_mip_start())
-        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
-        print(previous_solution.get_objective_value())
-        if current_constraint is not None:
-            tap.remove_constraint(current_constraint)
-        s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
-
-        tap.add_constraint(sum([vpls_xor(s_vals[i], s[i]) for i in range(ist.size)]) <= h, ctname="vpls")
-        current_constraint = tap.get_constraint_by_name("vpls")
-
-        previous_solution = tap.solve()
-        print(tap.get_solve_status())
-    end = time.time()
-    print("Time (s):", end - start)
-    return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
-    pass
-
-def find_tap_inst_details(id, size):
-    # open file in read mode
-    with open('./tap_instances_optimal.csv', 'r') as read_obj:
-        csv_reader = reader(read_obj)
-        for row in csv_reader:
-            if row[0]==id and row[1]==size:
-                return (row[2],row[3],row[4],row[5],row[6])
-        pass
-    return (-1,-1,-1,-1,"")
-
-def error_checker(id, size, z, sol):
-    error_z, error_sol=0
-    det = find_tap_inst_details(id,size)
-    t_z = det[5]
-    t_s = det[6]
-    error_z = abs(z-t_z)
-    c_sol = []
-    ts_first, sfirst = True
-    i=0
-    for c in sol:
-        if c == ',':
-            sfirst=True
-        elif not c=="\"":
-            if sfirst:
-                sfirst=False
-                c_sol.append(int(c))
-            else:
-                pass
-                
-    return (error_z,error_sol)
-
-if __name__ == '__main__':
-    '''
+'''
+def call_cplex_safemode():
     ist = TapInstance("./instances/tap_5_200.dat")
     max_iter = 10
     h = 20
@@ -188,7 +114,113 @@ if __name__ == '__main__':
         print(tap.get_solve_status())
 
     end = time.time()
+    return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
+'''
+
+def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+    #sId=5, size=200
+    ist_str="./instances/tap_"+str(serialId)+"_"+str(size)
+    ist = TapInstance(ist_str+".dat")
+    #max_iter = 10
+    #h = 20
+    #.solv -> rajouter t_it max (voir doc)
+    #return solution, t_exec...
+    budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
+    dist_bound = round(epsDcoef * ist.size * 4.5)#0,35 -> param e_d
+    print(ist)
+    tap = Model(name="TAP")
+    tap.set_time_limit(itTime)
+    x, s = make_problem(tap, ist, dist_bound, budget)
+    #tap.print_information()
+    #solution = tap.solve()
+    #tap.print_solution()
+
+    previous_solution = load_warm(tap, ist_str+".warm")
+    previous_solution.check_as_mip_start(strong_check=True)
+    start = time.time()
+    current_constraint = None
+    for n_iter in range(max_iter):
+        tap.add_mip_start(previous_solution.as_mip_start())
+        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
+        print(previous_solution.get_objective_value())
+        if current_constraint is not None:
+            tap.remove_constraint(current_constraint)
+        s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
+
+        tap.add_constraint(sum([vpls_xor(s_vals[i], s[i]) for i in range(ist.size)]) <= h, ctname="vpls")
+        current_constraint = tap.get_constraint_by_name("vpls")
+
+        previous_solution = tap.solve()
+        print(tap.get_solve_status())
+    end = time.time()
     print("Time (s):", end - start)
-    '''
-    solv=call_cplex(5,200,10)
-    print(solv[0]+":::"+solv[1]+":::"+solv[2])
+    return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
+    pass
+
+def find_tap_inst_details(id, size):
+    # open file in read mode
+    with open('./tap_instances_optimal.csv', 'r') as read_obj:
+        csv_reader = reader(read_obj)
+        for row in csv_reader:
+            if row[0]==id and row[1]==size:
+                return (row[2],row[3],row[4],row[5],row[6])
+        pass
+    return (-1,-1,-1,-1,"")
+
+def error_checker(id, size, z, sol):
+    error_z, error_sol=0
+    det = find_tap_inst_details(id,size)
+    t_z = det[3]
+    t_s = det[4]
+    error_z = abs(z-t_z)
+    c_sol, t_sol = []
+    ts_first, sfirst = True
+    i=0
+    for c in sol:
+        if c == ',':
+            sfirst=True
+        elif not c=="\"":
+            if sfirst:
+                sfirst=False
+                c_sol.append(int(c))
+            else:
+                c_sol[i] *=10
+                c_sol[i] +=int(c)
+        
+        if t_s[i] == ',':
+            ts_first=True
+        elif not t_s[i]=="\"":
+            if ts_first:
+                ts_first=False
+                t_sol.append(int(c))
+            else:
+                t_sol[i] *=10
+                t_sol[i] +=int(c)
+    error_sol = hammingDistance(c_sol,t_sol)
+    return (error_z,error_sol)
+
+def hammingDistance(v1,v2):
+    h=0
+    for i in range(v1.length()):
+        if not v1[i] == v2[i]:
+            h+=1
+    return h
+
+def run_for_ranges(id_all, size_all, t_limit):
+    for size in size_all:
+        for id in id_all:
+            solv=call_cplex(id,size,t_limit)
+    print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
+
+if __name__ == '__main__':
+    id=5
+    size=200
+    t_limit=10
+    run_for_ranges((0,5),(100,200))
+    #solv=call_cplex(id,size,t_limit)
+    #print("Solution")
+    #for e in solv[0]:
+    #    print(str(e))
+    print("time::"+str(solv[1])+"::z::"+str(solv[2]))
+    #err = error_checker(id,size,solv[0],solv[2])
+    #print("Erreur::"+str(err[0])+"::"+str(err[1]))

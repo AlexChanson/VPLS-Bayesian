@@ -159,7 +159,7 @@ def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDc
 
 def find_tap_inst_details(id, size):
     # open file in read mode
-    with open('./tap_instances_optimal.csv', 'r') as read_obj:
+    with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
         csv_reader = reader(read_obj)
         for row in csv_reader:
             if row[0]==id and row[1]==size:
@@ -167,15 +167,19 @@ def find_tap_inst_details(id, size):
         pass
     return (-1,-1,-1,-1,"")
 
-def error_checker(id, size, z, sol):
-    error_z, error_sol=0
+def error_checker(id, size, z, sol=""):
+    error_z=0
+    error_sol=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
     t_s = det[4]
     error_z = abs(z-t_z)
-    c_sol, t_sol = []
-    ts_first, sfirst = True
+    c_sol=[]
+    t_sol = []
+    ts_first = True
+    sfirst = True
     i=0
+    '''
     for c in sol:
         if c == ',':
             sfirst=True
@@ -198,6 +202,8 @@ def error_checker(id, size, z, sol):
                 t_sol[i] +=int(c)
     error_sol = hammingDistance(c_sol,t_sol)
     return (error_z,error_sol)
+    '''
+    return error_z
 
 def hammingDistance(v1,v2):
     h=0
@@ -210,17 +216,22 @@ def run_for_ranges(id_all, size_all, t_limit):
     for size in size_all:
         for id in id_all:
             solv=call_cplex(id,size,t_limit)
+            #(SolveSolution) solv[0].get_var_value()
+            timeDone = solv[1]
+            zDone = solv[2]
+            zError=error_checker(id,size,zDone)
+            print("===\nTime done: "+str(timeDone)+"\nz: "+str(zDone)+"\nz error: "+str(zError)+"\n")
     print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
 
 if __name__ == '__main__':
     id=5
     size=200
-    t_limit=10
-    run_for_ranges((0,5),(100,200))
+    t_limit=3
+    run_for_ranges((0,5),(100,200),t_limit)
     #solv=call_cplex(id,size,t_limit)
     #print("Solution")
     #for e in solv[0]:
     #    print(str(e))
-    print("time::"+str(solv[1])+"::z::"+str(solv[2]))
+    #print("time::"+str(solv[1])+"::z::"+str(solv[2]))
     #err = error_checker(id,size,solv[0],solv[2])
     #print("Erreur::"+str(err[0])+"::"+str(err[1]))

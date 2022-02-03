@@ -1,3 +1,5 @@
+from pickletools import optimize
+import re
 import sys
 import numpy as np
 import time
@@ -12,7 +14,13 @@ from structures import TapInstance
 
 #lib Hugo
 from csv import reader
+import sklearn as sk
+from sklearn import linear_model as lin_mod
+from skopt import gp_minimize
+from skopt.space import Real,Integer
+from skopt.utils import use_named_args
 
+##Define the mathematical problem of the problem we want to solve
 def make_problem(prob, instance, ed, et):
     n = instance.size
     s = prob.binary_var_list([i for i in range(n)], 0, 1, ["s_" + str(i+1) for i in range(n)])
@@ -49,6 +57,14 @@ def make_problem(prob, instance, ed, et):
             prob.add_constraint(((n - 1) * (1 - x[i, j])) - u[i - 1] + u[j - 1] >= 1, ctname="mtz_" + str(i) + "," + str(j))
     return x, s
 
+def moy(liste):
+    res=0
+    i=0
+    for item in liste:
+        res+=item
+        i+=1
+    res/=i
+    return res
 
 def load_warm_raw(file):
     with open(file) as f:
@@ -66,7 +82,8 @@ def load_warm(prob, file) -> SolveSolution:
     for i in range(len(warm) - 1):
         this = warm[i] + 1
         next_ = warm[i + 1] + 1
-        start.add_var_value("x_" + str(this) + "_" + str(next_), 1)
+        start.add_var_value("x_" + str(this) + "_" + str(next_), 
+        1)
     check = start.check_as_mip_start()
     return start
 
@@ -76,48 +93,8 @@ def vpls_xor(i, j):
         return 1 - j
     return j
 
-'''
-def call_cplex_safemode():
-    ist = TapInstance("./instances/tap_5_200.dat")
-    max_iter = 10
-    h = 20
-    #.solv -> rajouter t_it max (voir doc)
-    #return solution, t_exec...
-    budget = round(0.25 * ist.size * 27.5)#0,25 -> param e_t
-    dist_bound = round(0.35 * ist.size * 4.5)#0,35 -> param e_d
-    print(ist)
-
-    tap = Model(name="TAP")
-    tap.set_time_limit(3)
-    x, s = make_problem(tap, ist, dist_bound, budget)
-
-    #tap.print_information()
-    #solution = tap.solve()
-    #tap.print_solution()
-
-    previous_solution = load_warm(tap, "./instances/tap_5_200.warm")
-    previous_solution.check_as_mip_start(strong_check=True)
-    start = time.time()
-    current_constraint = None
-    for n_iter in range(max_iter):
-        tap.add_mip_start(previous_solution.as_mip_start())
-        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
-        print(previous_solution.get_objective_value())
-        if current_constraint is not None:
-            tap.remove_constraint(current_constraint)
-        s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
-
-        tap.add_constraint(sum([vpls_xor(s_vals[i], s[i]) for i in range(ist.size)]) <= h, ctname="vpls")
-        current_constraint = tap.get_constraint_by_name("vpls")
-
-        previous_solution = tap.solve()
-        print(tap.get_solve_status())
-
-    end = time.time()
-    return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
-'''
-
-def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+##Call CPLEX for particular instance and parameters
+def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
     #sId=5, size=200
     ist_str="./instances/tap_"+str(serialId)+"_"+str(size)
     ist = TapInstance(ist_str+".dat")
@@ -131,9 +108,6 @@ def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDc
     tap = Model(name="TAP")
     tap.set_time_limit(itTime)
     x, s = make_problem(tap, ist, dist_bound, budget)
-    #tap.print_information()
-    #solution = tap.solve()
-    #tap.print_solution()
 
     previous_solution = load_warm(tap, ist_str+".warm")
     previous_solution.check_as_mip_start(strong_check=True)
@@ -157,6 +131,7 @@ def call_cplex(serialId, size, itTime=5, max_iter=10, h=20, epsTcoef=0.25, epsDc
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
     pass
 
+##Return interesting information from the file of a particular instance with a certain size
 def find_tap_inst_details(id, size):
     # open file in read mode
     with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
@@ -167,71 +142,85 @@ def find_tap_inst_details(id, size):
         pass
     return (-1,-1,-1,-1,"")
 
-def error_checker(id, size, z, sol=""):
+##Compute and return the relative z error
+def error_checker(id, size, z):
     error_z=0
-    error_sol=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
-    t_s = det[4]
-    error_z = abs(z-t_z)
-    c_sol=[]
-    t_sol = []
-    ts_first = True
-    sfirst = True
-    i=0
-    '''
-    for c in sol:
-        if c == ',':
-            sfirst=True
-        elif not c=="\"":
-            if sfirst:
-                sfirst=False
-                c_sol.append(int(c))
-            else:
-                c_sol[i] *=10
-                c_sol[i] +=int(c)
-        
-        if t_s[i] == ',':
-            ts_first=True
-        elif not t_s[i]=="\"":
-            if ts_first:
-                ts_first=False
-                t_sol.append(int(c))
-            else:
-                t_sol[i] *=10
-                t_sol[i] +=int(c)
-    error_sol = hammingDistance(c_sol,t_sol)
-    return (error_z,error_sol)
-    '''
+    error_z = abs((z-t_z)/z)
     return error_z
 
-def hammingDistance(v1,v2):
-    h=0
-    for i in range(v1.length()):
-        if not v1[i] == v2[i]:
-            h+=1
-    return h
-
-def run_for_ranges(id_all, size_all, t_limit):
+entries=[]
+##Call CPLEX several time on a range of instance IDs and a range of sizes
+def run_for_ranges(id_all, size_all, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+    global entries
+    entries=[]
     for size in size_all:
         for id in id_all:
-            solv=call_cplex(id,size,t_limit)
-            #(SolveSolution) solv[0].get_var_value()
+            solv=call_cplex(id,size,t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35)
             timeDone = solv[1]
             zDone = solv[2]
             zError=error_checker(id,size,zDone)
+            entries.append((id,size,timeDone,zDone,zError))
             print("===\nTime done: "+str(timeDone)+"\nz: "+str(zDone)+"\nz error: "+str(zError)+"\n")
     print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
+    zs=[]
+    for row in entries:
+        zs.append(row[4])
+    z_neg_error_avg = -abs(moy(zs))
+    return z_neg_error_avg
 
+#main function
 if __name__ == '__main__':
     id=5
     size=200
     t_limit=3
-    run_for_ranges((0,5),(100,200),t_limit)
+    ids=(0,5)
+    sizes=(100,200)
+    '''
+    raw=run_for_ranges((0,5),(100,200),t_limit)
+    
+    zs=[]
+    for row in raw:
+        zs.append(row[4])
+    #z_error_avg = moy(zs)
+    z_error_avg=raw
+    print("Error average: "+str(z_error_avg))
+    #print("avg z="+str(np.average(raw[4])))
     #solv=call_cplex(id,size,t_limit)
-    #print("Solution")
-    #for e in solv[0]:
-    #    print(str(e))
+    '''
     #print("time::"+str(solv[1])+"::z::"+str(solv[2]))
     #err = error_checker(id,size,solv[0],solv[2])
     #print("Erreur::"+str(err[0])+"::"+str(err[1]))
+
+    ##begin bayes
+    dim1=Integer(name='tlim', low=60, high=600)
+    dim2=Integer(name='it', low=1, high=50)
+    dim3=Integer(name='h', low=1, high=50)
+    dims = [dim1,dim2,dim3]
+    @use_named_args(dimensions=dims)
+    def prepare(tlim,it,h):
+        return run_for_ranges((0,5), (20,40), tlim,it, h, 0.25, 0.35)
+    res = gp_minimize(prepare,                  # the function to minimize
+        #[(10,62),(1,50),(1,50)],      # the bounds on each dimension of x
+        dimensions=dims,
+        acq_func="EI",      # the acquisition function
+        n_calls=20,         # the number of evaluations of f
+        n_random_starts=5,  # the number of random initialization points
+        random_state=1234)   # the random seed
+    print(res)
+    from skopt.plots import plot_convergence
+    plot_convergence(res)
+
+    '''
+    prepare2 = lambda tlim,it,h : run_for_ranges((0,5), (100,200), tlim,it, h, 0.25, 0.35)
+    res = gp_minimize(prepare,                  # the function to minimize
+        [(60,600),(1,50),(1,50)],      # the bounds on each dimension of x
+        acq_func="EI",      # the acquisition function
+        n_calls=20,         # the number of evaluations of f
+        n_random_starts=5,  # the number of random initialization points
+        random_state=1234)   # the random seed
+    print(res)
+    from skopt.plots import plot_convergence
+    plot_convergence(res)
+    '''

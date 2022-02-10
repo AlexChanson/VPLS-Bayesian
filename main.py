@@ -1,6 +1,7 @@
 from pickletools import optimize
 import re
 import sys
+import matplotlib
 import numpy as np
 import time
 
@@ -15,10 +16,11 @@ from structures import TapInstance
 #lib Hugo
 from csv import reader
 import sklearn as sk
-from sklearn import linear_model as lin_mod
+#from sklearn import linear_model as lin_mod
 from skopt import gp_minimize
 from skopt.space import Real,Integer
 from skopt.utils import use_named_args
+from matplotlib import pyplot as plt
 
 ##Define the mathematical problem of the problem we want to solve
 def make_problem(prob, instance, ed, et):
@@ -94,7 +96,7 @@ def vpls_xor(i, j):
     return j
 
 ##Call CPLEX for particular instance and parameters
-def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35,printing=True):
     #sId=5, size=200
     ist_str="./instances/tap_"+str(serialId)+"_"+str(size)
     ist = TapInstance(ist_str+".dat")
@@ -104,7 +106,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     #return solution, t_exec...
     budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
     dist_bound = round(epsDcoef * ist.size * 4.5)#0,35 -> param e_d
-    print(ist)
+    if printing is True:print(ist)
     tap = Model(name="TAP")
     tap.set_time_limit(itTime)
     x, s = make_problem(tap, ist, dist_bound, budget)
@@ -115,8 +117,8 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     current_constraint = None
     for n_iter in range(max_iter):
         tap.add_mip_start(previous_solution.as_mip_start())
-        #print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
-        print(previous_solution.get_objective_value())
+        #if printing==True:print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
+        if printing==True:print(previous_solution.get_objective_value())
         if current_constraint is not None:
             tap.remove_constraint(current_constraint)
         s_vals = [int(previous_solution.get_var_value(s[i])) for i in range(ist.size)]
@@ -125,9 +127,9 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
         current_constraint = tap.get_constraint_by_name("vpls")
 
         previous_solution = tap.solve()
-        print(tap.get_solve_status())
+        if printing==True:print(tap.get_solve_status())
     end = time.time()
-    print("Time (s):", end - start)
+    if printing==True:print("Time (s):", end - start)
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
     pass
 
@@ -150,25 +152,37 @@ def error_checker(id, size, z):
     error_z = abs((z-t_z)/z)
     return error_z
 
-entries=[]
+idsPr=1
+printing=False
 ##Call CPLEX several time on a range of instance IDs and a range of sizes
-def run_for_ranges(id_all, size_all, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
-    global entries
+def run_for_ranges(instances, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+    global idsPr,printing
+    if printing is True:print(str(t_limit)+"###"+str(max_iter)+"##"+str(h))
     entries=[]
-    for size in size_all:
-        for id in id_all:
-            solv=call_cplex(id,size,t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35)
-            timeDone = solv[1]
-            zDone = solv[2]
-            zError=error_checker(id,size,zDone)
-            entries.append((id,size,timeDone,zDone,zError))
-            print("===\nTime done: "+str(timeDone)+"\nz: "+str(zDone)+"\nz error: "+str(zError)+"\n")
-    print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
+    for inst in instances:
+        for size in inst[1]:
+            for id in [0]:
+                solv=call_cplex(id,size,t_limit,max_iter, h, epsTcoef, epsDcoef,printing)
+                timeDone = solv[1]
+                zDone = solv[2]
+                zError=error_checker(id,size,zDone)
+                entries.append((idsPr,id,size,timeDone,zDone,zError))
+                #print("x"+str(idsPr)+";"+str(t_limit)+" "+str(max_iter)+" "+str(h)+";"+str(timeDone)+";"+str(zDone)+";"+str(zError))
+                #idsPr+=1
+    #print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
     zs=[]
+    zd=[]
+    timeDoneTot=0
     for row in entries:
-        zs.append(row[4])
-    z_neg_error_avg = -abs(moy(zs))
-    return z_neg_error_avg
+        zs.append(row[5])
+        zd.append(row[4])
+        timeDoneTot+=row[3]
+    z_error_avg = abs(moy(zs))
+    z_avg = abs(moy(zd))
+    str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error_avg)
+    print(str_terminal)
+    idsPr+=1
+    return z_error_avg
 
 #main function
 if __name__ == '__main__':
@@ -188,19 +202,23 @@ if __name__ == '__main__':
     print("Error average: "+str(z_error_avg))
     #print("avg z="+str(np.average(raw[4])))
     #solv=call_cplex(id,size,t_limit)
-    '''
     #print("time::"+str(solv[1])+"::z::"+str(solv[2]))
     #err = error_checker(id,size,solv[0],solv[2])
     #print("Erreur::"+str(err[0])+"::"+str(err[1]))
-
+    '''
     ##begin bayes
     dim1=Integer(name='tlim', low=60, high=600)
     dim2=Integer(name='it', low=1, high=50)
     dim3=Integer(name='h', low=1, high=50)
     dims = [dim1,dim2,dim3]
+    print("xId;t_limit;max_iter;h;timeDone;z;zRelativeError")
     @use_named_args(dimensions=dims)
     def prepare(tlim,it,h):
-        return run_for_ranges((0,5), (20,40), tlim,it, h, 0.25, 0.35)
+        ist=[]
+        ist.append([(1,2,3,4,5,6,7),(60,80)])
+        ist.append([(1,2,3,4),[100]])
+        ist.append([(1,2),[200]])
+        return run_for_ranges(ist, tlim,it, h, 0.25, 0.35)
     res = gp_minimize(prepare,                  # the function to minimize
         #[(10,62),(1,50),(1,50)],      # the bounds on each dimension of x
         dimensions=dims,
@@ -210,7 +228,14 @@ if __name__ == '__main__':
         random_state=1234)   # the random seed
     print(res)
     from skopt.plots import plot_convergence
-    plot_convergence(res)
+    convergence=plot_convergence(res)
+    #plt.plot(convergence)
+    #plt.show()
+
+
+    #histV=np.histogram()
+    histC=0
+    histT=0
 
     '''
     prepare2 = lambda tlim,it,h : run_for_ranges((0,5), (100,200), tlim,it, h, 0.25, 0.35)

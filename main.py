@@ -149,7 +149,7 @@ def error_checker(id, size, z):
     error_z=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
-    error_z = abs((z-t_z)/z)*100
+    error_z = (abs((z-t_z)/z)-1)*100
     return error_z
 
 idsPr=1

@@ -211,6 +211,7 @@ if __name__ == '__main__':
     dim3=Integer(name='h', low=1, high=50)
     dims = [dim1,dim2,dim3]
     print("xId;t_limit;max_iter;h;timeDone;z;zRelativeError")
+    
     @use_named_args(dimensions=dims)
     def prepare(tlim,it,h):
         ist=[]
@@ -235,7 +236,6 @@ if __name__ == '__main__':
     #histV=np.histogram()
     histC=0
     histT=0
-
     '''
     prepare2 = lambda tlim,it,h : run_for_ranges((0,5), (100,200), tlim,it, h, 0.25, 0.35)
     res = gp_minimize(prepare,                  # the function to minimize
@@ -248,3 +248,12 @@ if __name__ == '__main__':
     from skopt.plots import plot_convergence
     plot_convergence(res)
     '''
+
+    try:
+        import subprocess
+        subprocess.run(["/users/21500078t/discord.sh", "Le script d'Hugo est fini"])
+    # execute except block if error occurs
+    except ImportError:
+        print("Unable to import module.")
+    except FileNotFoundError:
+        print("File does not exist on this machine.")

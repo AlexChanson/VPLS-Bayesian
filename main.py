@@ -96,7 +96,7 @@ def vpls_xor(i, j):
     return j
 
 ##Call CPLEX for particular instance and parameters
-def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35,printing=True):
+def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35,printing=False):
     #sId=5, size=200
     ist_str="./instances/tap_"+str(serialId)+"_"+str(size)
     ist = TapInstance(ist_str+".dat")
@@ -106,7 +106,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     #return solution, t_exec...
     budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
     dist_bound = round(epsDcoef * ist.size * 4.5)#0,35 -> param e_d
-    if printing is True:print(ist)
+    #print(ist)
     tap = Model(name="TAP")
     tap.set_time_limit(itTime)
     x, s = make_problem(tap, ist, dist_bound, budget)
@@ -144,25 +144,24 @@ def find_tap_inst_details(id, size):
         pass
     return (-1,-1,-1,-1,"")
 
-##Compute and return the relative z error
+##Compute and return the relative z error in purcentages
 def error_checker(id, size, z):
     error_z=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
-    error_z = abs((z-t_z)/z)
+    error_z = abs((z-t_z)/z)*100
     return error_z
 
 idsPr=1
-printing=False
 ##Call CPLEX several time on a range of instance IDs and a range of sizes
 def run_for_ranges(instances, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
-    global idsPr,printing
-    if printing is True:print(str(t_limit)+"###"+str(max_iter)+"##"+str(h))
+    global idsPr
+    #print(str(t_limit)+"###"+str(max_iter)+"##"+str(h))
     entries=[]
     for inst in instances:
         for size in inst[1]:
-            for id in [0]:
-                solv=call_cplex(id,size,t_limit,max_iter, h, epsTcoef, epsDcoef,printing)
+            for id in inst[0]:
+                solv=call_cplex(id,size,t_limit,max_iter, h, epsTcoef, epsDcoef)
                 timeDone = solv[1]
                 zDone = solv[2]
                 zError=error_checker(id,size,zDone)

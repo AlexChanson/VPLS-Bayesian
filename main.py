@@ -142,11 +142,16 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
 def find_tap_inst_details(id, size):
     # open file in read mode
     with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
+        #print("ok")
         csv_reader = reader(read_obj)
+        next(csv_reader,None)
         for row in csv_reader:
-            if row[0]==id and row[1]==size:
-                return (row[2],row[3],row[4],row[5],row[6])
-        pass
+            #print("row0="+str(row[0]))
+            #print("row1="+str(row[1]))
+            #print("size="+str(size))
+            #print("id="+str(id))
+            if int(row[0])==id and int(row[1])==size:
+                return (float(row[2]),float(row[3]),float(row[4]),float(row[5]),row[6])
     print("ERROR: Instance not found!")
     return (-1,-1,-1,-1,"")
 
@@ -156,6 +161,7 @@ def error_checker(id, size, z):
     det = find_tap_inst_details(id,size)
     t_z = det[3]
     error_z = ((t_z-z)/t_z)*100.0
+    print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
     return error_z
 
 idsPr=1

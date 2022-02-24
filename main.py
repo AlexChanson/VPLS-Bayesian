@@ -22,6 +22,12 @@ from skopt.space import Real,Integer
 from skopt.utils import use_named_args
 from matplotlib import pyplot as plt
 
+#Script config
+nbCalls=40
+randomIts=10
+print("nbCalls="+str(nbCalls))
+print("randomIts="+str(randomIts))
+
 ##Define the mathematical problem of the problem we want to solve
 def make_problem(prob, instance, ed, et):
     n = instance.size
@@ -131,7 +137,6 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     end = time.time()
     if printing==True:print("Time (s):", end - start)
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
-    pass
 
 ##Return interesting information from the file of a particular instance with a certain size
 def find_tap_inst_details(id, size):
@@ -142,6 +147,7 @@ def find_tap_inst_details(id, size):
             if row[0]==id and row[1]==size:
                 return (row[2],row[3],row[4],row[5],row[6])
         pass
+    print("ERROR: Instance not found!")
     return (-1,-1,-1,-1,"")
 
 ##Compute and return the relative z error in purcentages
@@ -149,12 +155,12 @@ def error_checker(id, size, z):
     error_z=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
-    error_z = (abs((z-t_z)/z)-1)*100
+    error_z = ((t_z-z)/t_z)*100.0
     return error_z
 
 idsPr=1
 ##Call CPLEX several time on a range of instance IDs and a range of sizes
-def run_for_ranges(instances, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35):
+def run_for_ranges(instances, t_limit,max_iter, h, epsTcoef=0.25, epsDcoef=0.35):
     global idsPr
     #print(str(t_limit)+"###"+str(max_iter)+"##"+str(h))
     entries=[]
@@ -176,8 +182,8 @@ def run_for_ranges(instances, t_limit,max_iter=10, h=20, epsTcoef=0.25, epsDcoef
         zs.append(row[5])
         zd.append(row[4])
         timeDoneTot+=row[3]
-    z_error_avg = abs(moy(zs))
-    z_avg = abs(moy(zd))
+    z_error_avg = moy(zs)
+    z_avg = moy(zd)
     str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error_avg)
     print(str_terminal)
     idsPr+=1
@@ -223,12 +229,12 @@ if __name__ == '__main__':
         #[(10,62),(1,50),(1,50)],      # the bounds on each dimension of x
         dimensions=dims,
         acq_func="EI",      # the acquisition function
-        n_calls=20,         # the number of evaluations of f
-        n_random_starts=5,  # the number of random initialization points
+        n_calls=nbCalls,         # the number of evaluations of f
+        n_random_starts=randomIts,  # the number of random initialization points
         random_state=1234)   # the random seed
     print(res)
-    from skopt.plots import plot_convergence
-    convergence=plot_convergence(res)
+    #from skopt.plots import plot_convergence
+    #convergence=plot_convergence(res)
     #plt.plot(convergence)
     #plt.show()
 

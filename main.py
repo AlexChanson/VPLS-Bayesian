@@ -22,6 +22,11 @@ from skopt.space import Real,Integer
 from skopt.utils import use_named_args
 from matplotlib import pyplot as plt
 
+import docplex.cp.parameters
+params =docplex.cp.parameters.CpoParameters()
+params.threads=0
+params.cpumask="FFFFFFFF"
+
 #Script config
 nbCalls=40
 randomIts=10
@@ -110,11 +115,15 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     #h = 20
     #.solv -> rajouter t_it max (voir doc)
     #return solution, t_exec...
-    budget = round(epsTcoef * ist.size * 27.5)#0,25 -> param e_t
-    dist_bound = round(epsDcoef * ist.size * 4.5)#0,35 -> param e_d
+    import decimal
+    budget = int(decimal.Decimal(str(epsTcoef* ist.size * 27.5)).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+    dist_bound = int(decimal.Decimal(str(epsDcoef * ist.size * 4.5)).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
+    #0,25 -> param e_t
+    #0,35 -> param e_d
     #print(ist)
     tap = Model(name="TAP")
     tap.set_time_limit(itTime)
+    #use only the first core available
     x, s = make_problem(tap, ist, dist_bound, budget)
 
     previous_solution = load_warm(tap, ist_str+".warm")
@@ -141,7 +150,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
 ##Return interesting information from the file of a particular instance with a certain size
 def find_tap_inst_details(id, size):
     # open file in read mode
-    with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
+    with open('./data/tap_instances_optimal_fixed.csv', 'r') as read_obj:
         #print("ok")
         csv_reader = reader(read_obj)
         next(csv_reader,None)
@@ -154,6 +163,32 @@ def find_tap_inst_details(id, size):
                 return (float(row[2]),float(row[3]),float(row[4]),float(row[5]),row[6])
     print("ERROR: Instance not found!")
     return (-1,-1,-1,-1,"")
+
+def get_instance(id,size):
+    # open file in read mode
+    file_str="./instances/tap_"+str(id)+"_"+str(size)+".dat"
+    f=open(file_str, 'r')
+    lines = f.readlines()
+    
+    c=0
+    interests=""
+    runtime=""
+    dist=[]
+    for line in lines:
+        line=line.strip()
+        if c==1:
+            interests=line
+        elif c==2:
+            runtime=line
+        elif c>=3:
+            dist.append(line)
+        c+=1
+    interests=interests.replace("\'","")
+    interests=interests.split()
+    runtime=runtime.replace("\'","")
+    runtime=runtime.split()
+    return(interests,runtime,dist)
+
 
 ##Compute and return the relative z error in purcentages
 def error_checker(id, size, z):
@@ -248,17 +283,132 @@ if __name__ == '__main__':
     #histV=np.histogram()
     histC=0
     histT=0
+
+    def histoInterest(id,size,nbBins):
+        bins=[]
+        beans=[]
+        for i in range(0,nbBins):
+            beans.append(0)
+            bins.append((1.0/nbBins)*(i+1.0))
+        #get interests
+        inst=get_instance(id,size)
+        interests=inst[0]
+        for k in interests:
+            machined=False
+            j=0
+            i=float(k)
+            if i<0:
+                machined=True
+                print("ERROR: Negative interest value!")
+            while not machined or j<nbBins:
+                if i<bins[j]:
+                    beans[j]+=1
+                    machined=True
+                j+=1
+        total=np.sum(beans)
+        freq=[]
+        for b in beans:
+            freq.append(int(b)/total)
+        return (bins,freq)
+
+    def histoRuntime(id,size,nbBins=11,upper=50):
+        bins=[]
+        beans=[]
+        for i in range(0,nbBins):
+            beans.append(0)
+            bins.append((upper/int(nbBins))*(i+1))
+        beans.append(0)
+        bins.append(999)
+        #get runtimes
+        inst=get_instance(id,size)
+        runtime=inst[1]
+        for k in runtime:
+            machined=False
+            j=0
+            r=float(k)
+            if r<0:
+                machined=True
+                print("ERROR: Negative interest value!")
+            while not machined or j<nbBins:
+                if r<bins[j]:
+                    beans[j]+=1
+                    machined=True
+                j+=1
+        total=np.sum(beans)
+        freq=[]
+        for b in beans:
+            freq.append(int(b)/total)
+        return (bins,freq)
+
+    def histoDistances(id,size,nbBins=11,dmax=10):
+        bins=[]
+        beans=[]
+        for i in range(0,nbBins):
+            beans.append(0)
+            bins.append((dmax/nbBins)*(i+1))
+        beans.append(0)
+        bins.append(999)
+        #get distances
+        inst=get_instance(id,size)
+        dists=inst[2]
+        distances=[]
+        for d in dists:
+            x=d.split()
+            matrixRight=False
+            for y in x:
+                if(matrixRight):
+                    distances.append(int(y))
+                else:
+                    if int(y)==0:
+                        matrixRight=True
+        for k in distances:
+            machined=False
+            j=0
+            d=float(k)
+            if d<0:
+                machined=True
+                print("ERROR: Negative interest value!")
+            while not machined or j<nbBins:
+                if d<bins[j]:
+                    beans[j]+=1
+                    machined=True
+                j+=1
+        total=np.sum(beans)
+        freq=[]
+        for b in beans:
+            freq.append(int(b)/total)
+        return (bins,freq)
+
     '''
-    prepare2 = lambda tlim,it,h : run_for_ranges((0,5), (100,200), tlim,it, h, 0.25, 0.35)
-    res = gp_minimize(prepare,                  # the function to minimize
-        [(60,600),(1,50),(1,50)],      # the bounds on each dimension of x
-        acq_func="EI",      # the acquisition function
-        n_calls=20,         # the number of evaluations of f
-        n_random_starts=5,  # the number of random initialization points
-        random_state=1234)   # the random seed
-    print(res)
-    from skopt.plots import plot_convergence
-    plot_convergence(res)
+    hI=histoInterest(0,20,10)
+    print(np.sum(hI[1]))
+    print(hI[0])
+    hT=histoRuntime(0,20,10)
+    print(np.sum(hT[1]))
+    print(hT[0])
+    hD=histoDistances(0,20,10)
+    print(np.sum(hD[1]))
+    print(hD[0])
+
+    ci=1
+    dimensions=[]
+    for u in hI[1] :
+        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
+        ci+=1
+    for u in hT[1] :
+        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
+        ci+=1
+    for u in hD[1] :
+        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
+        ci+=1
+    for u in range(0,3) :
+        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
+        ci+=1
+    print(ci)
+    
+
+    def linearComb():
+        summ=0
     '''
 
     try:

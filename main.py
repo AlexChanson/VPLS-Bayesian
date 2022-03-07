@@ -150,7 +150,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
 ##Return interesting information from the file of a particular instance with a certain size
 def find_tap_inst_details(id, size):
     # open file in read mode
-    with open('./data/tap_instances_optimal_fixed.csv', 'r') as read_obj:
+    with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
         #print("ok")
         csv_reader = reader(read_obj)
         next(csv_reader,None)

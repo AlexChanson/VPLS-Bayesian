@@ -196,7 +196,7 @@ def error_checker(id, size, z):
     det = find_tap_inst_details(id,size)
     t_z = det[3]
     error_z = ((t_z-z)/t_z)*100.0
-    print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
+    #print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
     return error_z
 
 idsPr=1
@@ -226,7 +226,7 @@ def run_for_ranges(instances, t_limit,max_iter, h, epsTcoef=0.25, epsDcoef=0.35)
     z_error_avg = moy(zs)
     z_avg = moy(zd)
     str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error_avg)
-    print(str_terminal)
+    print(str_terminal)#log for results
     idsPr+=1
     return z_error_avg
 

@@ -151,7 +151,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
 def find_tap_inst_details(id, size):
     # open file in read mode
     with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
-        #print("ok")
+        #print("File found")
         csv_reader = reader(read_obj)
         next(csv_reader,None)
         for row in csv_reader:
@@ -262,9 +262,9 @@ if __name__ == '__main__':
     @use_named_args(dimensions=dims)
     def prepare(tlim,it,h):
         ist=[]
-        ist.append([(1,2,3,4,5,6,7),(60,80)])
-        ist.append([(1,2,3,4),[100]])
-        ist.append([(1,2),[200]])
+        #ist.append([(1,2,3,4,5,6,7),(60,80)])
+        #ist.append([(1,2,3,4),[100]])
+        ist.append([(0,1,2,3,4,5,6,7,8,9),[200]])
         return run_for_ranges(ist, tlim,it, h, 0.25, 0.35)
     res = gp_minimize(prepare,                  # the function to minimize
         #[(10,62),(1,50),(1,50)],      # the bounds on each dimension of x

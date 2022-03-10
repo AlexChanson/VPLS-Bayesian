@@ -24,8 +24,11 @@ from matplotlib import pyplot as plt
 
 import docplex.cp.parameters
 params =docplex.cp.parameters.CpoParameters()
+#Allow CPLEX to choose the number of threads
 params.threads=0
+#Makes CPLEX bind each thread to a single core using the available cores
 params.cpumask="FFFFFFFF"
+#So, CPLEX should use no more than x threads, while x is the number of core of the current machine
 
 #Script config
 nbCalls=40
@@ -191,11 +194,20 @@ def get_instance(id,size):
 
 
 ##Compute and return the relative z error in purcentages
-def error_checker(id, size, z):
+def relative_error_checker(id, size, z):
     error_z=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
     error_z = ((t_z-z)/t_z)*100.0
+    #print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
+    return error_z
+
+##Compute and return the relative z error in purcentages
+def error_checker(id, size, z):
+    error_z=0
+    det = find_tap_inst_details(id,size)
+    t_z = det[3]
+    error_z = t_z-z
     #print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
     return error_z
 
@@ -211,21 +223,26 @@ def run_for_ranges(instances, t_limit,max_iter, h, epsTcoef=0.25, epsDcoef=0.35)
                 solv=call_cplex(id,size,t_limit,max_iter, h, epsTcoef, epsDcoef)
                 timeDone = solv[1]
                 zDone = solv[2]
-                zError=error_checker(id,size,zDone)
-                entries.append((idsPr,id,size,timeDone,zDone,zError))
+                zRelativeError=relative_error_checker(id,size,zDone)
+                zError = error_checker(id,size,zDone)
+                entries.append((idsPr,id,size,timeDone,zDone,zError,zRelativeError))
                 #print("x"+str(idsPr)+";"+str(t_limit)+" "+str(max_iter)+" "+str(h)+";"+str(timeDone)+";"+str(zDone)+";"+str(zError))
                 #idsPr+=1
     #print("Processed through IDs "+str(id_all)+" and sizes "+str(size_all))
     zs=[]
     zd=[]
+    ze=[]
     timeDoneTot=0
     for row in entries:
-        zs.append(row[5])
+        zs.append(row[6])
         zd.append(row[4])
         timeDoneTot+=row[3]
+        ze.append(row[5])
     z_error_avg = moy(zs)
     z_avg = moy(zd)
-    str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error_avg)
+    #z_error=moy(ze)
+    z_error=sum(ze)
+    str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error)+";"+str(z_error_avg)
     print(str_terminal)#log for results
     idsPr+=1
     return z_error_avg
@@ -257,7 +274,7 @@ if __name__ == '__main__':
     dim2=Integer(name='it', low=1, high=50)
     dim3=Integer(name='h', low=1, high=50)
     dims = [dim1,dim2,dim3]
-    print("xId;t_limit;max_iter;h;timeDone;z;zRelativeError")
+    print("xId;t_limit;max_iter;h;timeDone;z;zError;zRelativeError")
     
     @use_named_args(dimensions=dims)
     def prepare(tlim,it,h):

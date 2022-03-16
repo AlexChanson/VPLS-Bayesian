@@ -33,8 +33,10 @@ params.cpumask="FFFFFFFF"
 #Script config
 nbCalls=40
 randomIts=10
+maxDelay=10#nb of minutes allowed for a single cplex call
 print("nbCalls="+str(nbCalls))
 print("randomIts="+str(randomIts))
+print("maxDelay="+str(str(maxDelay)))
 
 ##Define the mathematical problem of the problem we want to solve
 def make_problem(prob, instance, ed, et):
@@ -271,13 +273,14 @@ if __name__ == '__main__':
     '''
     ##begin bayes
     dim1=Integer(name='tlim', low=60, high=600)
-    dim2=Integer(name='it', low=1, high=50)
+    #dim2=Integer(name='it', low=1, high=50)
     dim3=Integer(name='h', low=1, high=50)
-    dims = [dim1,dim2,dim3]
+    dims = [dim1,dim3]
     print("xId;t_limit;max_iter;h;timeDone;z;zError;zRelativeError")
     
     @use_named_args(dimensions=dims)
-    def prepare(tlim,it,h):
+    def prepare(tlim,h):
+        it=(maxDelay*60)//tlim
         ist=[]
         #ist.append([(1,2,3,4,5,6,7),(60,80)])
         #ist.append([(1,2,3,4),[100]])

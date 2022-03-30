@@ -15,14 +15,11 @@ from structures import TapInstance
 
 #lib Hugo
 from csv import reader
-import sklearn as sk
-#from sklearn import linear_model as lin_mod
 from skopt import gp_minimize
 from skopt.space import Real,Integer
 from skopt.utils import use_named_args
-from matplotlib import pyplot as plt
-
 import docplex.cp.parameters
+
 params =docplex.cp.parameters.CpoParameters()
 #Allow CPLEX to choose the number of threads
 params.threads=0
@@ -30,10 +27,10 @@ params.threads=0
 params.cpumask="FFFFFFFF"
 #So, CPLEX should use no more than x threads, while x is the number of core of the current machine
 
-#Script config
-nbCalls=40
-randomIts=10
-maxDelay=10#nb of minutes allowed for a single cplex call
+##Script configuration
+nbCalls=40      #nb of iterations of the bayesian learning (include the number of random iterationsx)
+randomIts=10    #nb of random iterations at the beginning of the bayesian learning (included in nbCalls)
+maxDelay=10     #nb of minutes allowed for a single cplex call
 print("nbCalls="+str(nbCalls))
 print("randomIts="+str(randomIts))
 print("maxDelay="+str(str(maxDelay)))
@@ -75,7 +72,15 @@ def make_problem(prob, instance, ed, et):
             prob.add_constraint(((n - 1) * (1 - x[i, j])) - u[i - 1] + u[j - 1] >= 1, ctname="mtz_" + str(i) + "," + str(j))
     return x, s
 
-def moy(liste):
+def mkAverage(liste):
+    """Make the average over a list of numbers
+    
+    Args:
+        liste (list): the list of values
+
+    Returns:
+        a float
+    """
     res=0
     i=0
     for item in liste:
@@ -84,13 +89,14 @@ def moy(liste):
     res/=i
     return res
 
+#
 def load_warm_raw(file):
     with open(file) as f:
         S = f.readline().strip().split(" ")
         S = list(map(int, S))
         return S
 
-
+#
 def load_warm(prob, file) -> SolveSolution:
     # Load base solution
     warm = load_warm_raw(file)
@@ -105,27 +111,44 @@ def load_warm(prob, file) -> SolveSolution:
     check = start.check_as_mip_start()
     return start
 
-
 def vpls_xor(i, j):
+    """XOR logical gate
+    
+    Args:
+        i (boolean): first entry
+        j (boolean): second entry
+    
+    Returns:
+        a boolean
+    """
     if i == 1:
         return 1 - j
     return j
 
-##Call CPLEX for particular instance and parameters
 def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDcoef=0.35,printing=False):
-    #sId=5, size=200
+    """Call CPLEX for particular instance and parameters
+    
+    This function process a call of the CPLEX solver for a specific instance with a specificsize.
+
+    Args:
+        serialId (int): id of the instance to run
+        size (int): size of the wanted instance
+        itTime (int): maximal time of an iteration in seconds, 3 by default
+        max_iter (int): maximal number of tries, 10 by default
+        h (int): maximal Hamming distance for solutions, 20 by default
+        epsTcoef (float): time limit for the execution time limit constraint of the model, 0.25 by default
+        epsDcoef (float): distance limit for the distance limit constraint of the model, 0.35 by default
+        printing (boolean): allow to print some logs when True, False by default
+
+    Returns:
+        a tuple containing: (the solution,the total resolution time,the objective function value)
+    """
     ist_str="./instances/tap_"+str(serialId)+"_"+str(size)
     ist = TapInstance(ist_str+".dat")
-    #max_iter = 10
-    #h = 20
-    #.solv -> rajouter t_it max (voir doc)
-    #return solution, t_exec...
     import decimal
     budget = int(decimal.Decimal(str(epsTcoef* ist.size * 27.5)).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
     dist_bound = int(decimal.Decimal(str(epsDcoef * ist.size * 4.5)).quantize(decimal.Decimal('1'), rounding=decimal.ROUND_HALF_UP))
-    #0,25 -> param e_t
-    #0,35 -> param e_d
-    #print(ist)
+    #Defining the TAP model
     tap = Model(name="TAP")
     tap.set_time_limit(itTime)
     #use only the first core available
@@ -152,8 +175,16 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     if printing==True:print("Time (s):", end - start)
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
 
-##Return interesting information from the file of a particular instance with a certain size
 def find_tap_inst_details(id, size):
+    """Return interesting information from the file of a particular instance with a certain size
+    
+    Args:
+        id (int): id of the instance
+        size (int): size 
+
+    Returns:
+        a tuple containing: (time limit, distance limite, resolution time, optimal solution score, solution)
+    """
     # open file in read mode
     with open('./data/tap_instances_optimal.csv', 'r') as read_obj:
         #print("File found")
@@ -170,6 +201,15 @@ def find_tap_inst_details(id, size):
     return (-1,-1,-1,-1,"")
 
 def get_instance(id,size):
+    """Return datas about a particular instance from its id and size
+    
+    Args:
+        id (int): id of the instance
+        size (int): size of the instance
+
+    Returns:
+        a tuple containing: (an array[size](float:0-1) with the interest values, an array[size](int) with the runtime values, a matrix[size][size](int) with the distances)
+    """
     # open file in read mode
     file_str="./instances/tap_"+str(id)+"_"+str(size)+".dat"
     f=open(file_str, 'r')
@@ -194,18 +234,32 @@ def get_instance(id,size):
     runtime=runtime.split()
     return(interests,runtime,dist)
 
-
-##Compute and return the relative z error in purcentages
 def relative_error_checker(id, size, z):
+    """Compute and return the relative z error in purcentages
+    
+    Args:
+        id (int): id of the instance
+        size(int): size of the instance
+        z (float): objective function value founded to compare with the best result
+        
+    Returns:
+        a float, the reative difference ((originalZ-zFound)/originalZ) *100
+    """
     error_z=0
     det = find_tap_inst_details(id,size)
-    t_z = det[3]
-    error_z = ((t_z-z)/t_z)*100.0
+    original_z = det[3]
+    error_z = ((original_z-z)/original_z)*100.0
     #print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
     return error_z
 
-##Compute and return the relative z error in purcentages
-def error_checker(id, size, z):
+def error_difference_checker(id, size, z):
+    """Compute and return the z error difference
+    
+    Args:
+        id (int): id of the instance
+        size (int): size of the instance
+        z (float): objective function value founded to compare with the best result
+    """
     error_z=0
     det = find_tap_inst_details(id,size)
     t_z = det[3]
@@ -226,7 +280,7 @@ def run_for_ranges(instances, t_limit,max_iter, h, epsTcoef=0.25, epsDcoef=0.35)
                 timeDone = solv[1]
                 zDone = solv[2]
                 zRelativeError=relative_error_checker(id,size,zDone)
-                zError = error_checker(id,size,zDone)
+                zError = error_difference_checker(id,size,zDone)
                 entries.append((idsPr,id,size,timeDone,zDone,zError,zRelativeError))
                 #print("x"+str(idsPr)+";"+str(t_limit)+" "+str(max_iter)+" "+str(h)+";"+str(timeDone)+";"+str(zDone)+";"+str(zError))
                 #idsPr+=1
@@ -240,10 +294,9 @@ def run_for_ranges(instances, t_limit,max_iter, h, epsTcoef=0.25, epsDcoef=0.35)
         zd.append(row[4])
         timeDoneTot+=row[3]
         ze.append(row[5])
-    z_error_avg = moy(zs)
-    z_avg = moy(zd)
-    #z_error=moy(ze)
-    z_error=sum(ze)
+    z_error_avg = np.average(zs)#average of z relative error
+    z_avg = np.average(zd)#average of z
+    z_error=sum(ze)#sum of error
     str_terminal="x"+str(idsPr)+";"+str(t_limit)+";"+str(max_iter)+";"+str(h)+";"+str(timeDoneTot)+";"+str(z_avg)+";"+str(z_error)+";"+str(z_error_avg)
     print(str_terminal)#log for results
     idsPr+=1
@@ -256,22 +309,8 @@ if __name__ == '__main__':
     t_limit=3
     ids=(0,5)
     sizes=(100,200)
-    '''
-    raw=run_for_ranges((0,5),(100,200),t_limit)
     
-    zs=[]
-    for row in raw:
-        zs.append(row[4])
-    #z_error_avg = moy(zs)
-    z_error_avg=raw
-    print("Error average: "+str(z_error_avg))
-    #print("avg z="+str(np.average(raw[4])))
-    #solv=call_cplex(id,size,t_limit)
-    #print("time::"+str(solv[1])+"::z::"+str(solv[2]))
-    #err = error_checker(id,size,solv[0],solv[2])
-    #print("Erreur::"+str(err[0])+"::"+str(err[1]))
-    '''
-    ##begin bayes
+    ##Begin bayesian learning
     dim1=Integer(name='tlim', low=60, high=600)
     #dim2=Integer(name='it', low=1, high=50)
     dim3=Integer(name='h', low=1, high=50)
@@ -294,16 +333,13 @@ if __name__ == '__main__':
         n_random_starts=randomIts,  # the number of random initialization points
         random_state=1234)   # the random seed
     print(res)
-    #from skopt.plots import plot_convergence
-    #convergence=plot_convergence(res)
-    #plt.plot(convergence)
-    #plt.show()
+    
+    
+    ###
+    #####   For further works
+    ###
 
-
-    #histV=np.histogram()
-    histC=0
-    histT=0
-
+    ##Compute the histogram of interest for a particular instance with a specified number of bins
     def histoInterest(id,size,nbBins):
         bins=[]
         beans=[]
@@ -331,6 +367,7 @@ if __name__ == '__main__':
             freq.append(int(b)/total)
         return (bins,freq)
 
+    ##Compute the histogram of runtimes for a particular instance with a specified number of bins and an upper bound (recommanded: 11 bins for upper bound at 55)
     def histoRuntime(id,size,nbBins=11,upper=50):
         bins=[]
         beans=[]
@@ -360,6 +397,7 @@ if __name__ == '__main__':
             freq.append(int(b)/total)
         return (bins,freq)
 
+    ##Compute the histogram of distances for a particular instance with a specified number of bins and a max distance (recommanded: 11 bins for a max distance of 10)
     def histoDistances(id,size,nbBins=11,dmax=10):
         bins=[]
         beans=[]
@@ -399,38 +437,7 @@ if __name__ == '__main__':
             freq.append(int(b)/total)
         return (bins,freq)
 
-    '''
-    hI=histoInterest(0,20,10)
-    print(np.sum(hI[1]))
-    print(hI[0])
-    hT=histoRuntime(0,20,10)
-    print(np.sum(hT[1]))
-    print(hT[0])
-    hD=histoDistances(0,20,10)
-    print(np.sum(hD[1]))
-    print(hD[0])
-
-    ci=1
-    dimensions=[]
-    for u in hI[1] :
-        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
-        ci+=1
-    for u in hT[1] :
-        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
-        ci+=1
-    for u in hD[1] :
-        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
-        ci+=1
-    for u in range(0,3) :
-        dimensions.append(Integer(name="a"+str(ci), low=60, high=600))
-        ci+=1
-    print(ci)
-    
-
-    def linearComb():
-        summ=0
-    '''
-
+    ##Code to warn Alexandre when script is over on the distant server
     try:
         import subprocess
         subprocess.run(["/users/21500078t/discord.sh", "Le script d'Hugo est fini"])
@@ -439,3 +446,25 @@ if __name__ == '__main__':
         print("Unable to import module.")
     except FileNotFoundError:
         print("File does not exist on this machine.")
+
+
+
+    def testall():
+        """Call all test functions
+        
+        Each function shall print as a log the result of the test.
+
+        Args:
+            Nothing
+
+        Returns:
+            Nothing
+        """
+        pass
+
+    def test_errorChecker():
+        pass
+
+    def test_errorDifferenceChecker():
+        pass
+

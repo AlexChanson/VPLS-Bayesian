@@ -1,0 +1,128 @@
+nbCalls=40
+randomIts=10
+xId;t_limit;max_iter;h;timeDone;z;zError;zRelativeError
+x1;329;41;31;59.949962854385376;54.3283524527316;0.004942374366891045;0.0009375306625592758
+x2;477;43;8;61.57267737388611;54.32902838355083;-0.0018169338253244405;-0.00033159605897671324
+x3;167;41;9;58.80801725387573;54.328884114900305;-0.0003742473201100438;-7.113098912530814e-05
+x4;123;2;25;39.289496183395386;54.328800736413385;0.00045953754905525557;8.986304347904142e-05
+x5;239;40;6;61.690600872039795;54.328884114900305;-0.0003742473201100438;-7.113098912530814e-05
+x6;90;23;2;76.28665566444397;54.3171063064601;0.11740383708196589;0.022105065980645055
+x7;217;13;37;37.450615882873535;54.328796818305875;0.0004987186241578456;0.00012505289400239702
+x8;540;49;7;65.51938009262085;54.32843974932602;0.004069408422623155;0.0007413467794315704
+x9;273;23;27;46.9071729183197;54.328208184081085;0.006385060872034387;0.0011979957323979096
+x10;487;24;22;52.56490969657898;54.32826907424469;0.005776159236056344;0.0010985246951636255
+x11;429;1;50;69.68458318710327;54.32791407911721;0.00932611051082688;0.0016982233981287637
+x12;487;50;50;67.31061506271362;54.32791407911725;0.009326110510365027;0.00169822339804623
+x13;144;46;44;67.60877799987793;54.32826907424468;0.005776159236098977;0.0010985246951712882
+x14;560;27;50;50.89767503738403;54.32791407911725;0.009326110510365027;0.00169822339804623
+x15;373;27;9;47.57086896896362;54.328884114900305;-0.0003742473201100438;-7.113098912530814e-05
+x16;370;13;45;41.102936029434204;54.32850063948962;0.003460506786687745;0.0006418757422049494
+x17;600;49;15;64.41460680961609;54.328800736413385;0.00045953754905525557;8.986304347904142e-05
+x18;151;1;18;72.68594431877136;54.328945005063645;-0.0009831489535514493;-0.0001706020258833467
+x19;599;2;40;33.48756408691406;54.32858401797654;0.002626721917479813;0.00048088170959293693
+x20;400;44;48;61.56100511550903;54.328796818305875;0.0004987186241578456;0.00012505289400239702
+x21;302;1;1;11.398308038711548;54.28366284208107;0.45183848087213363;0.08481562679716412
+x22;285;50;25;66.95877480506897;54.328800736413385;0.00045953754905525557;8.986304347904142e-05
+x23;340;50;1;45.8665874004364;54.28366284208107;0.45183848087213363;0.08481562679716412
+x24;205;27;26;49.918123960494995;54.32856917116844;0.00277518999850912;0.0005465119964530431
+x25;90;16;49;42.30275845527649;54.3283524527316;0.004942374366891045;0.0009375306625592758
+x26;552;40;17;59.86532926559448;54.32894500506389;-0.0009831489560880868;-0.0001706020263595922
+x27;589;45;38;62.11920666694641;54.328796818305875;0.0004987186241578456;0.00012505289400239702
+x28;61;20;3;43.72827196121216;54.32734248364831;0.015042065199786236;0.002756131587112185
+x29;390;15;20;42.41637110710144;54.32835637083912;0.004903193291788455;0.00090234081203592
+x30;282;35;29;57.90407204627991;54.32791407911725;0.009326110510365027;0.00169822339804623
+x31;501;16;42;42.38084411621094;54.3283524527316;0.004942374366891045;0.0009375306625592758
+x32;599;43;14;63.08247232437134;54.32835637083912;0.004903193291788455;0.00090234081203592
+x33;347;41;11;64.47411561012268;54.32835637083912;0.004903193291788455;0.00090234081203592
+x34;321;36;33;55.02945566177368;54.32791407911725;0.009326110510365027;0.00169822339804623
+x35;330;29;35;50.078214168548584;54.3283524527316;0.004942374366891045;0.0009375306625592758
+x36;87;5;47;34.56945443153381;54.3283524527316;0.004942374366891045;0.0009375306625592758
+x37;597;7;24;37.370492696762085;54.32835637083912;0.004903193291788455;0.00090234081203592
+x38;67;6;12;32.42277979850769;54.328884114900305;-0.00037424732015267637;-7.113098913297106e-05
+x39;60;50;6;67.92413425445557;54.328884114900305;-0.0003742473201100438;-7.113098912530814e-05
+x40;586;1;5;64.21982002258301;54.32888411490006;-0.00037424731775814735;-7.113098868379227e-05
+          fun: -0.00033159605897671324
+    func_vals: array([ 9.37530663e-04, -3.31596059e-04, -7.11309891e-05,  8.98630435e-05,
+       -7.11309891e-05,  2.21050660e-02,  1.25052894e-04,  7.41346779e-04,
+        1.19799573e-03,  1.09852470e-03,  1.69822340e-03,  1.69822340e-03,
+        1.09852470e-03,  1.69822340e-03, -7.11309891e-05,  6.41875742e-04,
+        8.98630435e-05, -1.70602026e-04,  4.80881710e-04,  1.25052894e-04,
+        8.48156268e-02,  8.98630435e-05,  8.48156268e-02,  5.46511996e-04,
+        9.37530663e-04, -1.70602026e-04,  1.25052894e-04,  2.75613159e-03,
+        9.02340812e-04,  1.69822340e-03,  9.37530663e-04,  9.02340812e-04,
+        9.02340812e-04,  1.69822340e-03,  9.37530663e-04,  9.37530663e-04,
+        9.02340812e-04, -7.11309891e-05, -7.11309891e-05, -7.11309887e-05])
+       models: [GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5) + WhiteKernel(noise_level=1),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775)]
+ random_state: RandomState(MT19937) at 0x7F2C5BDA7A40
+        space: Space([Integer(low=60, high=600, prior='uniform', transform='normalize'),
+       Integer(low=1, high=50, prior='uniform', transform='normalize'),
+       Integer(low=1, high=50, prior='uniform', transform='normalize')])
+        specs: {'args': {'func': <function prepare at 0x7f2c5baaea60>, 'dimensions': Space([Integer(low=60, high=600, prior='uniform', transform='normalize'),
+       Integer(low=1, high=50, prior='uniform', transform='normalize'),
+       Integer(low=1, high=50, prior='uniform', transform='normalize')]), 'base_estimator': GaussianProcessRegressor(kernel=1**2 * Matern(length_scale=[1, 1, 1], nu=2.5),
+                         n_restarts_optimizer=2, noise='gaussian',
+                         normalize_y=True, random_state=822569775), 'n_calls': 40, 'n_random_starts': 10, 'n_initial_points': 10, 'initial_point_generator': 'random', 'acq_func': 'EI', 'acq_optimizer': 'auto', 'x0': None, 'y0': None, 'random_state': RandomState(MT19937) at 0x7F2C5BDA7A40, 'verbose': False, 'callback': None, 'n_points': 10000, 'n_restarts_optimizer': 5, 'xi': 0.01, 'kappa': 1.96, 'n_jobs': 1, 'model_queue_size': None}, 'function': 'base_minimize'}
+            x: [477, 43, 8]
+      x_iters: [[329, 41, 31], [477, 43, 8], [167, 41, 9], [123, 2, 25], [239, 40, 6], [90, 23, 2], [217, 13, 37], [540, 49, 7], [273, 23, 27], [487, 24, 22], [429, 1, 50], [487, 50, 50], [144, 46, 44], [560, 27, 50], [373, 27, 9], [370, 13, 45], [600, 49, 15], [151, 1, 18], [599, 2, 40], [400, 44, 48], [302, 1, 1], [285, 50, 25], [340, 50, 1], [205, 27, 26], [90, 16, 49], [552, 40, 17], [589, 45, 38], [61, 20, 3], [390, 15, 20], [282, 35, 29], [501, 16, 42], [599, 43, 14], [347, 41, 11], [321, 36, 33], [330, 29, 35], [87, 5, 47], [597, 7, 24], [67, 6, 12], [60, 50, 6], [586, 1, 5]]

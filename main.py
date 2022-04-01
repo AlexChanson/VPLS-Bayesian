@@ -20,6 +20,16 @@ from skopt.space import Real,Integer
 from skopt.utils import use_named_args
 import docplex.cp.parameters
 
+##
+# Install Ubuntu on your computer for Windows
+# Install Python 3.10
+# Install CPLEX for Python
+# Install Visual Studio Code (Community Version)
+##
+# To access documentation, use $pydoc3 -p 1234 and connect to localhost:1234/
+# ook for the file main.py in your current repertory;
+##
+
 params =docplex.cp.parameters.CpoParameters()
 #Allow CPLEX to choose the number of threads
 params.threads=0
@@ -71,23 +81,6 @@ def make_problem(prob, instance, ed, et):
         for j in range(1, n+1):
             prob.add_constraint(((n - 1) * (1 - x[i, j])) - u[i - 1] + u[j - 1] >= 1, ctname="mtz_" + str(i) + "," + str(j))
     return x, s
-
-def mkAverage(liste):
-    """Make the average over a list of numbers
-    
-    Args:
-        liste (list): the list of values
-
-    Returns:
-        a float
-    """
-    res=0
-    i=0
-    for item in liste:
-        res+=item
-        i+=1
-    res/=i
-    return res
 
 #
 def load_warm_raw(file):
@@ -156,11 +149,11 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
 
     previous_solution = load_warm(tap, ist_str+".warm")
     previous_solution.check_as_mip_start(strong_check=True)
+    #initiate the time count
     start = time.time()
     current_constraint = None
     for n_iter in range(max_iter):
         tap.add_mip_start(previous_solution.as_mip_start())
-        #if printing==True:print([int(previous_solution.get_var_value(s[i])) for i in range(ist.size)])
         if printing==True:print(previous_solution.get_objective_value())
         if current_constraint is not None:
             tap.remove_constraint(current_constraint)
@@ -175,7 +168,7 @@ def call_cplex(serialId, size, itTime=3, max_iter=10, h=20, epsTcoef=0.25, epsDc
     if printing==True:print("Time (s):", end - start)
     return (previous_solution,tap.solve_details.time,previous_solution.get_objective_value())
 
-def find_tap_inst_details(id, size):
+def find_tap_inst_details(id, size, printing=False):
     """Return interesting information from the file of a particular instance with a certain size
     
     Args:
@@ -191,12 +184,17 @@ def find_tap_inst_details(id, size):
         csv_reader = reader(read_obj)
         next(csv_reader,None)
         for row in csv_reader:
-            #print("row0="+str(row[0]))
-            #print("row1="+str(row[1]))
-            #print("size="+str(size))
-            #print("id="+str(id))
+            #Logs for debug if a file is badly writtened
+            if printing == True: print("row0="+str(row[0]))
+            if printing == True:("row1="+str(row[1]))
+            if printing == True:("size="+str(size))
+            if printing == True:("id="+str(id))
+
+            #Check if this line is the desired instance
             if int(row[0])==id and int(row[1])==size:
                 return (float(row[2]),float(row[3]),float(row[4]),float(row[5]),row[6])
+    
+    #If not found, returns a tuple fiull of -1 with a log
     print("ERROR: Instance not found!")
     return (-1,-1,-1,-1,"")
 
@@ -228,6 +226,8 @@ def get_instance(id,size):
         elif c>=3:
             dist.append(line)
         c+=1
+    
+    #Reformat correctly
     interests=interests.replace("\'","")
     interests=interests.split()
     runtime=runtime.replace("\'","")
@@ -246,10 +246,11 @@ def relative_error_checker(id, size, z):
         a float, the reative difference ((originalZ-zFound)/originalZ) *100
     """
     error_z=0
+    #Get the optimal solution
     det = find_tap_inst_details(id,size)
     original_z = det[3]
+    #Compute therelative error between current solution and optimal solution
     error_z = ((original_z-z)/original_z)*100.0
-    #print("id="+str(id)+";size="+str(size)+";z="+str(z)+";t_z="+str(t_z))
     return error_z
 
 def error_difference_checker(id, size, z):
@@ -325,6 +326,7 @@ if __name__ == '__main__':
         #ist.append([(1,2,3,4),[100]])
         ist.append([(0,1,2,3,4,5,6,7,8,9),[200]])
         return run_for_ranges(ist, tlim,it, h, 0.25, 0.35)
+    
     res = gp_minimize(prepare,                  # the function to minimize
         #[(10,62),(1,50),(1,50)],      # the bounds on each dimension of x
         dimensions=dims,
@@ -333,109 +335,139 @@ if __name__ == '__main__':
         n_random_starts=randomIts,  # the number of random initialization points
         random_state=1234)   # the random seed
     print(res)
-    
+       
     
     ###
     #####   For further works
     ###
 
-    ##Compute the histogram of interest for a particular instance with a specified number of bins
-    def histoInterest(id,size,nbBins):
-        bins=[]
-        beans=[]
-        for i in range(0,nbBins):
-            beans.append(0)
-            bins.append((1.0/nbBins)*(i+1.0))
-        #get interests
-        inst=get_instance(id,size)
-        interests=inst[0]
-        for k in interests:
-            machined=False
-            j=0
-            i=float(k)
-            if i<0:
-                machined=True
-                print("ERROR: Negative interest value!")
-            while not machined or j<nbBins:
-                if i<bins[j]:
-                    beans[j]+=1
-                    machined=True
-                j+=1
-        total=np.sum(beans)
-        freq=[]
-        for b in beans:
-            freq.append(int(b)/total)
-        return (bins,freq)
+    class histogramer:
+        def histoInterest(id,size,nbBins):
+            """Compute the histogram of interest for a particular instance with a specified number of bins
+            
+            Args:
+                id (int): id of the instance
+                size (int): size of the instance
+                nbBins (int): number of bins for the histogram
 
-    ##Compute the histogram of runtimes for a particular instance with a specified number of bins and an upper bound (recommanded: 11 bins for upper bound at 55)
-    def histoRuntime(id,size,nbBins=11,upper=50):
-        bins=[]
-        beans=[]
-        for i in range(0,nbBins):
-            beans.append(0)
-            bins.append((upper/int(nbBins))*(i+1))
-        beans.append(0)
-        bins.append(999)
-        #get runtimes
-        inst=get_instance(id,size)
-        runtime=inst[1]
-        for k in runtime:
-            machined=False
-            j=0
-            r=float(k)
-            if r<0:
-                machined=True
-                print("ERROR: Negative interest value!")
-            while not machined or j<nbBins:
-                if r<bins[j]:
-                    beans[j]+=1
+            Returns:
+                a numpy histogram
+            """
+            bins=[]
+            beans=[]
+            for i in range(0,nbBins):
+                beans.append(0)
+                bins.append((1.0/nbBins)*(i+1.0))
+            #get interests
+            inst=get_instance(id,size)
+            interests=inst[0]
+            for k in interests:
+                machined=False
+                j=0
+                i=float(k)
+                if i<0:
                     machined=True
-                j+=1
-        total=np.sum(beans)
-        freq=[]
-        for b in beans:
-            freq.append(int(b)/total)
-        return (bins,freq)
+                    print("ERROR: Negative interest value!")
+                while not machined or j<nbBins:
+                    if i<bins[j]:
+                        beans[j]+=1
+                        machined=True
+                    j+=1
+            total=np.sum(beans)
+            freq=[]
+            for b in beans:
+                freq.append(int(b)/total)
+            return (bins,freq)
 
-    ##Compute the histogram of distances for a particular instance with a specified number of bins and a max distance (recommanded: 11 bins for a max distance of 10)
-    def histoDistances(id,size,nbBins=11,dmax=10):
-        bins=[]
-        beans=[]
-        for i in range(0,nbBins):
+        def histoRuntime(id,size,nbBins=11,upper=50):
+            """Compute the histogram of runtimes for a particular instance with a specified number of bins and an upper bound (recommanded: 11 bins for upper bound at 55)
+            
+            Args:
+                id (int): id of the instance
+                size (int): size of the instance
+                nbBins (int): number of bins for the histogram
+                upper (int): upper bound of values
+
+            Returns:
+                a numpy histogram
+            """
+            bins=[]
+            beans=[]
+            for i in range(0,nbBins):
+                beans.append(0)
+                bins.append((upper/int(nbBins))*(i+1))
             beans.append(0)
-            bins.append((dmax/nbBins)*(i+1))
-        beans.append(0)
-        bins.append(999)
-        #get distances
-        inst=get_instance(id,size)
-        dists=inst[2]
-        distances=[]
-        for d in dists:
-            x=d.split()
-            matrixRight=False
-            for y in x:
-                if(matrixRight):
-                    distances.append(int(y))
-                else:
-                    if int(y)==0:
-                        matrixRight=True
-        for k in distances:
-            machined=False
-            j=0
-            d=float(k)
-            if d<0:
-                machined=True
-                print("ERROR: Negative interest value!")
-            while not machined or j<nbBins:
-                if d<bins[j]:
-                    beans[j]+=1
+            bins.append(999)
+            #get runtimes
+            inst=get_instance(id,size)
+            runtime=inst[1]
+            for k in runtime:
+                machined=False
+                j=0
+                r=float(k)
+                if r<0:
                     machined=True
-                j+=1
-        total=np.sum(beans)
-        freq=[]
-        for b in beans:
-            freq.append(int(b)/total)
-        return (bins,freq)
+                    print("ERROR: Negative interest value!")
+                while not machined or j<nbBins:
+                    if r<bins[j]:
+                        beans[j]+=1
+                        machined=True
+                    j+=1
+            total=np.sum(beans)
+            freq=[]
+            for b in beans:
+                freq.append(int(b)/total)
+            return (bins,freq)
+
+        def histoDistances(id,size,nbBins=11,dmax=10):
+            """Compute the histogram of distances for a particular instance with a specified number of bins and a max distance (recommanded: 11 bins for a max distance of 10)
+            
+            Args:
+                id (int): id of the instance
+                size (int): size of the instance
+                nbBins (int): number of bins for the histogram
+                dmax (int): upper bound of distances
+
+            Returns:
+                a numpy histogram
+            """
+            bins=[]
+            beans=[]
+            for i in range(0,nbBins):
+                beans.append(0)
+                bins.append((dmax/nbBins)*(i+1))
+            beans.append(0)
+            bins.append(999)
+            #get distances
+            inst=get_instance(id,size)
+            dists=inst[2]
+            distances=[]
+            for d in dists:
+                x=d.split()
+                matrixRight=False
+                for y in x:
+                    if(matrixRight):
+                        distances.append(int(y))
+                    else:
+                        if int(y)==0:
+                            matrixRight=True
+            for k in distances:
+                machined=False
+                j=0
+                d=float(k)
+                if d<0:
+                    machined=True
+                    print("ERROR: Negative interest value!")
+                while not machined or j<nbBins:
+                    if d<bins[j]:
+                        beans[j]+=1
+                        machined=True
+                    j+=1
+            total=np.sum(beans)
+            freq=[]
+            for b in beans:
+                freq.append(int(b)/total)
+            return (bins,freq)
 
     ##Code to warn Alexandre when script is over on the distant server
     try:
@@ -460,11 +492,24 @@ if __name__ == '__main__':
         Returns:
             Nothing
         """
+        test_errorChecker()
+        test_errorDifferenceChecker()
         pass
 
-    def test_errorChecker():
-        pass
+    def printError(val1,val2,fun=""):
+        print("TEST ERROR: "+str(val1)+"=="+str(val2)+" failed in function "+fun)
 
-    def test_errorDifferenceChecker():
-        pass
+    def test_errorChecker(id=0,size=20,z=0.06,expected=98.42219446453224):
+        res=relative_error_checker(id,size,z)
+        if not res == expected:
+            printError(res,expected)
+            return False
+        return True
+
+    def test_errorDifferenceChecker(id=0,size=20,z=0.06,expected=3.74275):
+        res=error_difference_checker(id,size,z)
+        if not res == expected:
+            printError(res,expected)
+            return False
+        return True
 
